@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/delivery_rules.dart';
+import '../../services/mock_data.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -27,11 +28,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _lngCtrl = TextEditingController(text: DeliveryRules.vendorLng.toString());
   }
 
-  final List<Map<String, String>> _slots = [
-    {'from': '9:00 am', 'to': '12:00 pm'},
-    {'from': '2:00 pm', 'to': '5:00 pm'},
-  ];
-
   void _save() {
     final radius = double.tryParse(_radiusCtrl.text);
     final rate = double.tryParse(_rateCtrl.text);
@@ -48,10 +44,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
         () => setState(() => _saved = false));
   }
 
-  void _removeSlot(int i) => setState(() => _slots.removeAt(i));
+  void _removeSlot(int i) => setState(() => MockData.deliverySlots.removeAt(i));
 
   void _addSlot() {
-    setState(() => _slots.add({'from': '6:00 pm', 'to': '9:00 pm'}));
+    final ctrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Add delivery slot'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Slot label',
+            hintText: 'e.g. 6–9 pm',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final label = ctrl.text.trim();
+              if (label.isNotEmpty) {
+                setState(() => MockData.deliverySlots.add(label));
+              }
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2F6B4F), foregroundColor: Colors.white),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -155,7 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: 'Time windows buyers can choose when placing an order.',
               child: Column(
                 children: [
-                  ..._slots.asMap().entries.map((e) => Padding(
+                  ...MockData.deliverySlots.asMap().entries.map((e) => Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: Row(
                           children: [
@@ -169,7 +195,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     color: const Color(0xFFE4DFD2)),
                               ),
                               child: Text(
-                                  '${e.value['from']}  –  ${e.value['to']}',
+                                  e.value,
                                   style: const TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
@@ -177,7 +203,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             const SizedBox(width: 12),
                             IconButton(
-                              onPressed: _slots.length > 1
+                              onPressed: MockData.deliverySlots.length > 1
                                   ? () => _removeSlot(e.key)
                                   : null,
                               icon: const Icon(Icons.remove_circle_outline,

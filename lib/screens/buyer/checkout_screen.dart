@@ -14,9 +14,15 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  String _selectedSlot = '9–12 am';
+  late String _selectedSlot;
 
-  static const _slots = ['9–12 am', '2–5 pm'];
+  List<String> get _slots => MockData.deliverySlots;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedSlot = MockData.deliverySlots.isNotEmpty ? MockData.deliverySlots.first : '';
+  }
 
   double get deliveryFee => DeliveryRules.deliveryFee(widget.distanceKm);
   double get subtotal {

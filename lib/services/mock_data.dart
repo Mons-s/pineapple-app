@@ -48,6 +48,8 @@ class MockData {
     ),
   ];
 
+  static List<String> deliverySlots = ['9–12 am', '2–5 pm'];
+
   static List<PineappleOrder> orders = [
     PineappleOrder(
       id: 'order_1052',
