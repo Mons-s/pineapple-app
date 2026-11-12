@@ -10,6 +10,10 @@ set(BINARY_NAME "pineapple_app")
 # versions of CMake.
 cmake_policy(VERSION 3.14...3.25)
 
+# Allow Firebase C++ SDK (which declares cmake_minimum_required < 3.5) to build
+# with newer CMake without errors.
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
 # Define build configuration option.
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(IS_MULTICONFIG)
