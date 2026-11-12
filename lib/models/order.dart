@@ -40,6 +40,28 @@ class PineappleOrder {
     required this.createdAt,
   });
 
+  PineappleOrder copyWith({String? status, String? paymentStatus}) {
+    return PineappleOrder(
+      id: id,
+      buyerId: buyerId,
+      buyerName: buyerName,
+      batchId: batchId,
+      grade: grade,
+      quantityKg: quantityKg,
+      pricePerKgSnapshot: pricePerKgSnapshot,
+      deliveryFeeSnapshot: deliveryFeeSnapshot,
+      totalAmount: totalAmount,
+      addressLine: addressLine,
+      lat: lat,
+      lng: lng,
+      distanceKm: distanceKm,
+      deliverySlot: deliverySlot,
+      status: status ?? this.status,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      createdAt: createdAt,
+    );
+  }
+
   factory PineappleOrder.fromMap(String id, Map<String, dynamic> map) {
     return PineappleOrder(
       id: id,
