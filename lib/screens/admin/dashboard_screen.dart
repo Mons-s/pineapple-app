@@ -1,10 +1,28 @@
 import 'package:flutter/material.dart';
+import '../../models/order.dart';
+import '../../models/batch.dart';
+import '../../services/mock_data.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final orders = MockData.orders;
+    final batches = MockData.batches;
+
+    final pendingCount = orders.where((o) => o.status == 'placed').length;
+    final inTransitCount = orders.where((o) => o.status == 'out_for_delivery').length;
+    final totalOrders = orders.length;
+    final revenue = orders
+        .where((o) => o.status != 'cancelled')
+        .fold<double>(0, (sum, o) => sum + o.totalAmount);
+
+    final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    final days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    final now = DateTime.now();
+    final dateStr = '${days[now.weekday - 1]}, ${now.day} ${months[now.month - 1]} ${now.year}';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F3EE),
       body: SingleChildScrollView(
@@ -12,7 +30,6 @@ class DashboardScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -24,44 +41,64 @@ class DashboardScreen extends StatelessWidget {
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF16281F))),
-                    Text('Wednesday, 12 November 2026',
-                        style: TextStyle(
-                            fontSize: 13, color: Colors.grey.shade600)),
+                    Text(dateStr,
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
                   ],
                 ),
-                _AlertBanner(),
+                if (pendingCount > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3E0),
+                      border: Border.all(color: const Color(0xFFFFB74D)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.notifications_active_rounded,
+                            color: Color(0xFFE65100), size: 16),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$pendingCount order${pendingCount > 1 ? 's' : ''} waiting for confirmation',
+                          style: const TextStyle(
+                              color: Color(0xFFE65100),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 28),
 
-            // Metric tiles
             Row(
               children: [
                 _MetricTile(
-                  label: 'Orders today',
-                  value: '12',
+                  label: 'Total orders',
+                  value: '$totalOrders',
                   icon: Icons.receipt_long_rounded,
                   color: const Color(0xFF2F6B4F),
                 ),
                 const SizedBox(width: 16),
                 _MetricTile(
-                  label: 'Revenue today',
-                  value: '₹4,120',
+                  label: 'Total revenue',
+                  value: '₹${revenue.toStringAsFixed(0)}',
                   icon: Icons.currency_rupee_rounded,
                   color: const Color(0xFFD98F27),
                 ),
                 const SizedBox(width: 16),
                 _MetricTile(
                   label: 'Pending confirmation',
-                  value: '3',
+                  value: '$pendingCount',
                   icon: Icons.pending_actions_rounded,
                   color: const Color(0xFFB25E1A),
-                  urgent: true,
+                  urgent: pendingCount > 0,
                 ),
                 const SizedBox(width: 16),
                 _MetricTile(
                   label: 'Out for delivery',
-                  value: '5',
+                  value: '$inTransitCount',
                   icon: Icons.local_shipping_rounded,
                   color: const Color(0xFF1565C0),
                 ),
@@ -69,51 +106,22 @@ class DashboardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 28),
 
-            // Orders + Stock side by side
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Recent orders
                 Expanded(
                   flex: 3,
-                  child: _RecentOrdersCard(),
+                  child: _RecentOrdersCard(orders: orders.take(5).toList()),
                 ),
                 const SizedBox(width: 20),
-                // Stock overview
                 Expanded(
                   flex: 2,
-                  child: _StockCard(),
+                  child: _StockCard(batches: batches),
                 ),
               ],
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _AlertBanner extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E0),
-        border: Border.all(color: const Color(0xFFFFB74D)),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Row(
-        children: [
-          Icon(Icons.notifications_active_rounded,
-              color: Color(0xFFE65100), size: 16),
-          SizedBox(width: 8),
-          Text('3 new orders waiting for confirmation',
-              style: TextStyle(
-                  color: Color(0xFFE65100),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600)),
-        ],
       ),
     );
   }
@@ -196,13 +204,8 @@ class _MetricTile extends StatelessWidget {
 }
 
 class _RecentOrdersCard extends StatelessWidget {
-  final _orders = const [
-    {'id': '#1052', 'buyer': 'Arjun Kumar', 'kg': '8 kg', 'dist': '6.1 km', 'slot': '9–12 am', 'status': 'pending'},
-    {'id': '#1051', 'buyer': 'Priya Nair', 'kg': '5 kg', 'dist': '4.2 km', 'slot': '9–12 am', 'status': 'dispatched'},
-    {'id': '#1050', 'buyer': 'Rahul Menon', 'kg': '10 kg', 'dist': '2.5 km', 'slot': '2–5 pm', 'status': 'delivered'},
-    {'id': '#1049', 'buyer': 'Sneha Thomas', 'kg': '3 kg', 'dist': '7.8 km', 'slot': '2–5 pm', 'status': 'pending'},
-    {'id': '#1048', 'buyer': 'Anil George', 'kg': '6 kg', 'dist': '3.1 km', 'slot': '9–12 am', 'status': 'delivered'},
-  ];
+  final List<PineappleOrder> orders;
+  const _RecentOrdersCard({required this.orders});
 
   @override
   Widget build(BuildContext context) {
@@ -234,34 +237,39 @@ class _RecentOrdersCard extends StatelessWidget {
                 TextButton(
                     onPressed: () {},
                     child: const Text('View all',
-                        style: TextStyle(
-                            color: Color(0xFF2F6B4F), fontSize: 12))),
+                        style: TextStyle(color: Color(0xFF2F6B4F), fontSize: 12))),
               ],
             ),
           ),
           const Divider(height: 16, thickness: 1, color: Color(0xFFF0EBE0)),
-          // Table header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
             child: Row(
               children: [
-                _tableHeader('Order', flex: 1),
-                _tableHeader('Buyer', flex: 2),
-                _tableHeader('Qty', flex: 1),
-                _tableHeader('Distance', flex: 1),
-                _tableHeader('Slot', flex: 1),
-                _tableHeader('Status', flex: 1),
+                _TH('Order', flex: 1),
+                _TH('Buyer', flex: 2),
+                _TH('Qty', flex: 1),
+                _TH('Distance', flex: 1),
+                _TH('Slot', flex: 1),
+                _TH('Status', flex: 1),
               ],
             ),
           ),
           const Divider(height: 1, thickness: 1, color: Color(0xFFF0EBE0)),
-          ..._orders.map((o) => _OrderRow(order: o)),
+          ...orders.map((o) => _OrderRow(order: o)),
         ],
       ),
     );
   }
+}
 
-  Widget _tableHeader(String text, {required int flex}) {
+class _TH extends StatelessWidget {
+  final String text;
+  final int flex;
+  const _TH(this.text, {required this.flex});
+
+  @override
+  Widget build(BuildContext context) {
     return Expanded(
       flex: flex,
       child: Text(text,
@@ -275,8 +283,13 @@ class _RecentOrdersCard extends StatelessWidget {
 }
 
 class _OrderRow extends StatelessWidget {
-  final Map<String, String> order;
+  final PineappleOrder order;
   const _OrderRow({required this.order});
+
+  String _displayId(String id) {
+    final parts = id.split('_');
+    return parts.length > 1 ? '#${parts.last}' : id;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -288,29 +301,28 @@ class _OrderRow extends StatelessWidget {
         children: [
           Expanded(
               flex: 1,
-              child: Text(order['id']!,
+              child: Text(_displayId(order.id),
                   style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF16281F)))),
           Expanded(
               flex: 2,
-              child: Text(order['buyer']!,
+              child: Text(order.buyerName,
                   style: const TextStyle(fontSize: 13, color: Color(0xFF16281F)))),
           Expanded(
               flex: 1,
-              child: Text(order['kg']!,
+              child: Text('${order.quantityKg.toStringAsFixed(0)} kg',
                   style: const TextStyle(fontSize: 13, color: Color(0xFF16281F)))),
           Expanded(
               flex: 1,
-              child: Text(order['dist']!,
+              child: Text('${order.distanceKm.toStringAsFixed(1)} km',
                   style: const TextStyle(fontSize: 13, color: Color(0xFF16281F)))),
           Expanded(
               flex: 1,
-              child: Text(order['slot']!,
-                  style: const TextStyle(
-                      fontSize: 12, color: Color(0xFF5A7060)))),
-          Expanded(flex: 1, child: _StatusChip(status: order['status']!)),
+              child: Text(order.deliverySlot,
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF5A7060)))),
+          Expanded(flex: 1, child: _StatusChip(status: order.status)),
         ],
       ),
     );
@@ -324,38 +336,31 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final config = switch (status) {
-      'pending' => (
-          label: 'Pending',
-          bg: const Color(0xFFFFF3E0),
-          fg: const Color(0xFFE65100)
-        ),
-      'dispatched' => (
-          label: 'Dispatched',
-          bg: const Color(0xFFE3EEE7),
-          fg: const Color(0xFF2F6B4F)
-        ),
-      'delivered' => (
-          label: 'Delivered',
-          bg: const Color(0xFFF0EBE0),
-          fg: const Color(0xFF5A7060)
-        ),
-      _ => (label: status, bg: Colors.grey.shade100, fg: Colors.grey),
+      'placed' => (l: 'Pending', bg: const Color(0xFFFFF3E0), fg: const Color(0xFFE65100)),
+      'confirmed' => (l: 'Confirmed', bg: const Color(0xFFE3F0FB), fg: const Color(0xFF1565C0)),
+      'out_for_delivery' => (l: 'In transit', bg: const Color(0xFFE3EEE7), fg: const Color(0xFF2F6B4F)),
+      'delivered' => (l: 'Delivered', bg: const Color(0xFFF0EBE0), fg: const Color(0xFF5A7060)),
+      'cancelled' => (l: 'Cancelled', bg: const Color(0xFFF6DCD6), fg: const Color(0xFFB23A2E)),
+      _ => (l: status, bg: Colors.grey.shade100, fg: Colors.grey),
     };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-          color: config.bg, borderRadius: BorderRadius.circular(6)),
-      child: Text(config.label,
-          style: TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w600, color: config.fg)),
+      decoration: BoxDecoration(color: config.bg, borderRadius: BorderRadius.circular(6)),
+      child: Text(config.l,
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: config.fg)),
     );
   }
 }
 
 class _StockCard extends StatelessWidget {
+  final List<Batch> batches;
+  const _StockCard({required this.batches});
+
   @override
   Widget build(BuildContext context) {
+    final lowBatches = batches.where((b) => b.stockKg < 30).toList();
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -380,49 +385,37 @@ class _StockCard extends StatelessWidget {
                     color: Color(0xFF16281F))),
           ),
           const Divider(height: 24, thickness: 1, color: Color(0xFFF0EBE0)),
-          _StockRow(
-            grade: 'Grade A · Premium',
-            kg: 235,
-            maxKg: 300,
-            price: '₹85/kg',
-            color: const Color(0xFF2F6B4F),
-            low: false,
-          ),
-          const SizedBox(height: 16),
-          _StockRow(
-            grade: 'Grade B · Standard',
-            kg: 18,
-            maxKg: 150,
-            price: '₹55/kg',
-            color: const Color(0xFFB23A2E),
-            low: true,
-          ),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF3E0),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFFFCC80)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.warning_amber_rounded,
-                      color: Color(0xFFE65100), size: 16),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Grade B stock is low. Consider restocking soon.',
-                      style: TextStyle(
-                          fontSize: 12, color: Color(0xFFE65100)),
+          ...batches.map((b) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _StockRow(batch: b),
+              )),
+          if (lowBatches.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3E0),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFFFCC80)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded,
+                        color: Color(0xFFE65100), size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Grade ${lowBatches.map((b) => b.grade).join(', ')} stock is low. Consider restocking soon.',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFFE65100)),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
+          ] else
+            const SizedBox(height: 20),
         ],
       ),
     );
@@ -430,24 +423,16 @@ class _StockCard extends StatelessWidget {
 }
 
 class _StockRow extends StatelessWidget {
-  final String grade;
-  final int kg;
-  final int maxKg;
-  final String price;
-  final Color color;
-  final bool low;
-
-  const _StockRow({
-    required this.grade,
-    required this.kg,
-    required this.maxKg,
-    required this.price,
-    required this.color,
-    required this.low,
-  });
+  final Batch batch;
+  const _StockRow({required this.batch});
 
   @override
   Widget build(BuildContext context) {
+    final isLow = batch.stockKg < 30;
+    final color = isLow ? const Color(0xFFB23A2E) : const Color(0xFF2F6B4F);
+    final maxKg = batch.grade == 'A' ? 300.0 : 150.0;
+    final label = batch.grade == 'A' ? 'Grade A · Premium' : 'Grade B · Standard';
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -456,23 +441,18 @@ class _StockRow extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(grade,
+              Text(label,
                   style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF16281F))),
+                      fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF16281F))),
               Row(
                 children: [
-                  Text('$kg kg',
+                  Text('${batch.stockKg.toStringAsFixed(0)} kg',
                       style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: color)),
-                  if (low) ...[
+                          fontSize: 13, fontWeight: FontWeight.w700, color: color)),
+                  if (isLow) ...[
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                           color: const Color(0xFFF6DCD6),
                           borderRadius: BorderRadius.circular(4)),
@@ -491,14 +471,14 @@ class _StockRow extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: kg / maxKg,
+              value: (batch.stockKg / maxKg).clamp(0.0, 1.0),
               backgroundColor: color.withOpacity(0.12),
               valueColor: AlwaysStoppedAnimation<Color>(color),
               minHeight: 6,
             ),
           ),
           const SizedBox(height: 4),
-          Text(price,
+          Text('₹${batch.pricePerKg.toStringAsFixed(0)}/kg',
               style: const TextStyle(fontSize: 11, color: Color(0xFF8A9690))),
         ],
       ),

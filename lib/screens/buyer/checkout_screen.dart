@@ -54,6 +54,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
 
     MockData.orders.add(order);
+    final batchIdx = MockData.batches.indexWhere((b) => b.id == cart.batch.id);
+    if (batchIdx != -1) {
+      MockData.batches[batchIdx] = MockData.batches[batchIdx].copyWith(
+        stockKg: MockData.batches[batchIdx].stockKg - cart.quantityKg,
+      );
+    }
     MockData.cart = null;
 
     Navigator.pushAndRemoveUntil(

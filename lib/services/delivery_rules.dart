@@ -4,11 +4,11 @@ import 'dart:math';
 /// Used in the app only to give the buyer instant feedback on the map
 /// screen — the Cloud Function is what actually enforces the rule.
 class DeliveryRules {
-  static const double vendorLat = 10.5276; // TODO: replace with your farm's real coordinates
-  static const double vendorLng = 76.2144;
-  static const double radiusKm = 10;
-  static const double ratePerKm = 5; // delivery fee rule: flat rate per km
-  static const double minOrderKg = 3;
+  static double vendorLat = 10.5276;
+  static double vendorLng = 76.2144;
+  static double radiusKm = 10;
+  static double ratePerKm = 5;
+  static double minOrderKg = 3;
 
   /// Straight-line ("as the crow flies") distance in km.
   static double distanceKm(double lat, double lng) {

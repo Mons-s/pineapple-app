@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/mock_data.dart';
 import 'dashboard_screen.dart';
 import 'orders_screen.dart';
 import 'batches_screen.dart';
@@ -14,13 +15,6 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _selectedIndex = 0;
 
-  final _screens = const [
-    DashboardScreen(),
-    OrdersScreen(),
-    BatchesScreen(),
-    SettingsScreen(),
-  ];
-
   final _navItems = const [
     _NavItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
     _NavItem(icon: Icons.receipt_long_rounded, label: 'Orders'),
@@ -30,6 +24,13 @@ class _AdminShellState extends State<AdminShell> {
 
   @override
   Widget build(BuildContext context) {
+    final screens = [
+      DashboardScreen(),
+      OrdersScreen(),
+      BatchesScreen(),
+      SettingsScreen(),
+    ];
+
     return Scaffold(
       body: Row(
         children: [
@@ -84,7 +85,11 @@ class _AdminShellState extends State<AdminShell> {
                     icon: item.icon,
                     label: item.label,
                     selected: selected,
-                    badge: i == 1 ? 3 : null, // 3 pending orders badge on Orders
+                    badge: i == 1
+                        ? (MockData.orders.where((o) => o.status == 'placed').length > 0
+                            ? MockData.orders.where((o) => o.status == 'placed').length
+                            : null)
+                        : null,
                     onTap: () => setState(() => _selectedIndex = i),
                   );
                 }),
@@ -134,7 +139,7 @@ class _AdminShellState extends State<AdminShell> {
             ),
           ),
           // Content area
-          Expanded(child: _screens[_selectedIndex]),
+          Expanded(child: screens[_selectedIndex]),
         ],
       ),
     );

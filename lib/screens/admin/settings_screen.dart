@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../services/delivery_rules.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -9,10 +10,22 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final _radiusCtrl = TextEditingController(text: '10');
-  final _rateCtrl = TextEditingController(text: '5');
-  final _minOrderCtrl = TextEditingController(text: '3');
+  late final TextEditingController _radiusCtrl;
+  late final TextEditingController _rateCtrl;
+  late final TextEditingController _minOrderCtrl;
+  late final TextEditingController _latCtrl;
+  late final TextEditingController _lngCtrl;
   bool _saved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _radiusCtrl = TextEditingController(text: DeliveryRules.radiusKm.toStringAsFixed(0));
+    _rateCtrl = TextEditingController(text: DeliveryRules.ratePerKm.toStringAsFixed(0));
+    _minOrderCtrl = TextEditingController(text: DeliveryRules.minOrderKg.toStringAsFixed(0));
+    _latCtrl = TextEditingController(text: DeliveryRules.vendorLat.toString());
+    _lngCtrl = TextEditingController(text: DeliveryRules.vendorLng.toString());
+  }
 
   final List<Map<String, String>> _slots = [
     {'from': '9:00 am', 'to': '12:00 pm'},
@@ -20,6 +33,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ];
 
   void _save() {
+    final radius = double.tryParse(_radiusCtrl.text);
+    final rate = double.tryParse(_rateCtrl.text);
+    final minOrder = double.tryParse(_minOrderCtrl.text);
+    final lat = double.tryParse(_latCtrl.text);
+    final lng = double.tryParse(_lngCtrl.text);
+    if (radius != null) DeliveryRules.radiusKm = radius;
+    if (rate != null) DeliveryRules.ratePerKm = rate;
+    if (minOrder != null) DeliveryRules.minOrderKg = minOrder;
+    if (lat != null) DeliveryRules.vendorLat = lat;
+    if (lng != null) DeliveryRules.vendorLng = lng;
     setState(() => _saved = true);
     Future.delayed(const Duration(seconds: 2),
         () => setState(() => _saved = false));
@@ -36,6 +59,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _radiusCtrl.dispose();
     _rateCtrl.dispose();
     _minOrderCtrl.dispose();
+    _latCtrl.dispose();
+    _lngCtrl.dispose();
     super.dispose();
   }
 
@@ -186,7 +211,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: _Field(
                       label: 'Latitude',
                       hint: 'e.g. 10.5276',
-                      controller: TextEditingController(text: '10.5276'),
+                      controller: _latCtrl,
                       icon: Icons.location_on_outlined,
                       helper: 'GPS coordinate of your farm.',
                     ),
@@ -196,7 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: _Field(
                       label: 'Longitude',
                       hint: 'e.g. 76.2144',
-                      controller: TextEditingController(text: '76.2144'),
+                      controller: _lngCtrl,
                       icon: Icons.location_on_outlined,
                       helper: 'GPS coordinate of your farm.',
                     ),

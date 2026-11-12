@@ -32,6 +32,23 @@ class Batch {
 
   bool get isAvailable => status == 'active' && stockKg > 0;
 
+  Batch copyWith({double? pricePerKg, double? stockKg, String? status}) {
+    return Batch(
+      id: id,
+      grade: grade,
+      pricePerKg: pricePerKg ?? this.pricePerKg,
+      stockKg: stockKg ?? this.stockKg,
+      harvestDate: harvestDate,
+      certificateUrl: certificateUrl,
+      certificateIssuedBy: certificateIssuedBy,
+      certificateDate: certificateDate,
+      brixSweetness: brixSweetness,
+      status: status ?? this.status,
+      ratingAvg: ratingAvg,
+      ratingCount: ratingCount,
+    );
+  }
+
   factory Batch.fromMap(String id, Map<String, dynamic> map) {
     return Batch(
       id: id,
