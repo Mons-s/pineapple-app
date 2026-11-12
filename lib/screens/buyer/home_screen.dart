@@ -3,6 +3,7 @@ import '../../models/batch.dart';
 import '../../services/mock_data.dart';
 import '../../theme.dart';
 import 'batch_detail_screen.dart';
+import 'order_history_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -11,7 +12,51 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final batches = MockData.batches;
     return Scaffold(
-      appBar: AppBar(title: const Text('Fresh pineapples')),
+      appBar: AppBar(
+        title: const Text('Fresh pineapples'),
+        actions: [
+          Builder(
+            builder: (ctx) {
+              final pendingCount = MockData.orders
+                  .where((o) => o.status != 'cancelled' && o.status != 'delivered')
+                  .length;
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.receipt_long_outlined),
+                    tooltip: 'My orders',
+                    onPressed: () => Navigator.push(
+                      ctx,
+                      MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+                    ),
+                  ),
+                  if (pendingCount > 0)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFB23A2E),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text('$pendingCount',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: batches.length,
