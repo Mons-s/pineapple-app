@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../services/app_state.dart';
 import '../../services/delivery_rules.dart';
-import '../../services/mock_data.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -29,24 +30,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _save() {
-    final radius = double.tryParse(_radiusCtrl.text);
-    final rate = double.tryParse(_rateCtrl.text);
-    final minOrder = double.tryParse(_minOrderCtrl.text);
-    final lat = double.tryParse(_latCtrl.text);
-    final lng = double.tryParse(_lngCtrl.text);
-    if (radius != null) DeliveryRules.radiusKm = radius;
-    if (rate != null) DeliveryRules.ratePerKm = rate;
-    if (minOrder != null) DeliveryRules.minOrderKg = minOrder;
-    if (lat != null) DeliveryRules.vendorLat = lat;
-    if (lng != null) DeliveryRules.vendorLng = lng;
+    context.read<AppState>().saveDeliveryRules(
+          radiusKm: double.tryParse(_radiusCtrl.text),
+          ratePerKm: double.tryParse(_rateCtrl.text),
+          minOrderKg: double.tryParse(_minOrderCtrl.text),
+          vendorLat: double.tryParse(_latCtrl.text),
+          vendorLng: double.tryParse(_lngCtrl.text),
+        );
     setState(() => _saved = true);
-    Future.delayed(const Duration(seconds: 2),
-        () => setState(() => _saved = false));
+    Future.delayed(
+        const Duration(seconds: 2), () => setState(() => _saved = false));
   }
 
-  void _removeSlot(int i) => setState(() => MockData.deliverySlots.removeAt(i));
+  void _removeSlot(int i) => context.read<AppState>().removeSlot(i);
 
   void _addSlot() {
+    final appState = context.read<AppState>();
     final ctrl = TextEditingController();
     showDialog(
       context: context,
@@ -66,9 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton(
             onPressed: () {
               final label = ctrl.text.trim();
-              if (label.isNotEmpty) {
-                setState(() => MockData.deliverySlots.add(label));
-              }
+              if (label.isNotEmpty) appState.addSlot(label);
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
@@ -181,7 +178,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: 'Time windows buyers can choose when placing an order.',
               child: Column(
                 children: [
-                  ...MockData.deliverySlots.asMap().entries.map((e) => Padding(
+                  ...context.watch<AppState>().deliverySlots.asMap().entries.map((e) => Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: Row(
                           children: [
@@ -203,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             const SizedBox(width: 12),
                             IconButton(
-                              onPressed: MockData.deliverySlots.length > 1
+                              onPressed: context.watch<AppState>().deliverySlots.length > 1
                                   ? () => _removeSlot(e.key)
                                   : null,
                               icon: const Icon(Icons.remove_circle_outline,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/batch.dart';
-import '../../services/mock_data.dart';
+import '../../services/app_state.dart';
 import '../../theme.dart';
 import 'batch_detail_screen.dart';
 import 'order_history_screen.dart';
@@ -10,50 +11,48 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final batches = MockData.batches;
+    final appState = context.watch<AppState>();
+    final batches = appState.batches;
+    final pendingCount = appState.orders
+        .where((o) => o.status != 'cancelled' && o.status != 'delivered')
+        .length;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Fresh pineapples'),
         actions: [
-          Builder(
-            builder: (ctx) {
-              final pendingCount = MockData.orders
-                  .where((o) => o.status != 'cancelled' && o.status != 'delivered')
-                  .length;
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.receipt_long_outlined),
-                    tooltip: 'My orders',
-                    onPressed: () => Navigator.push(
-                      ctx,
-                      MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.receipt_long_outlined),
+                tooltip: 'My orders',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+                ),
+              ),
+              if (pendingCount > 0)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    width: 16,
+                    height: 16,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFB23A2E),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text('$pendingCount',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold)),
                     ),
                   ),
-                  if (pendingCount > 0)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        width: 16,
-                        height: 16,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFB23A2E),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text('$pendingCount',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
+                ),
+            ],
           ),
         ],
       ),

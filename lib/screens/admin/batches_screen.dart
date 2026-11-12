@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/batch.dart';
-import '../../services/mock_data.dart';
+import '../../services/app_state.dart';
 
 class BatchesScreen extends StatefulWidget {
   const BatchesScreen({super.key});
@@ -11,7 +12,8 @@ class BatchesScreen extends StatefulWidget {
 
 class _BatchesScreenState extends State<BatchesScreen> {
   void _showEditDialog(int index, String field) {
-    final batch = MockData.batches[index];
+    final appState = context.read<AppState>();
+    final batch = appState.batches[index];
     final current = field == 'price' ? batch.pricePerKg : batch.stockKg;
     final ctrl = TextEditingController(text: current.toStringAsFixed(0));
 
@@ -34,11 +36,11 @@ class _BatchesScreenState extends State<BatchesScreen> {
             onPressed: () {
               final val = double.tryParse(ctrl.text);
               if (val != null) {
-                setState(() {
-                  MockData.batches[index] = field == 'price'
-                      ? MockData.batches[index].copyWith(pricePerKg: val)
-                      : MockData.batches[index].copyWith(stockKg: val);
-                });
+                if (field == 'price') {
+                  appState.updateBatch(index, pricePerKg: val);
+                } else {
+                  appState.updateBatch(index, stockKg: val);
+                }
               }
               Navigator.pop(context);
             },
@@ -52,6 +54,7 @@ class _BatchesScreenState extends State<BatchesScreen> {
   }
 
   void _showAddBatchDialog() {
+    final appState = context.read<AppState>();
     String selectedGrade = 'A';
     final priceCtrl = TextEditingController();
     final stockCtrl = TextEditingController();
@@ -95,20 +98,18 @@ class _BatchesScreenState extends State<BatchesScreen> {
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
             ElevatedButton(
               onPressed: () {
-                setState(() {
-                  MockData.batches.add(Batch(
-                    id: 'batch_${MockData.batches.length + 1}',
-                    grade: selectedGrade,
-                    pricePerKg: double.tryParse(priceCtrl.text) ?? 0,
-                    stockKg: double.tryParse(stockCtrl.text) ?? 0,
-                    harvestDate: DateTime.now(),
-                    certificateUrl: '',
-                    certificateIssuedBy: 'Pending',
-                    certificateDate: DateTime.now(),
-                    brixSweetness: double.tryParse(brixCtrl.text) ?? 0,
-                    status: 'active',
-                  ));
-                });
+                appState.addBatch(Batch(
+                  id: 'batch_${appState.batches.length + 1}',
+                  grade: selectedGrade,
+                  pricePerKg: double.tryParse(priceCtrl.text) ?? 0,
+                  stockKg: double.tryParse(stockCtrl.text) ?? 0,
+                  harvestDate: DateTime.now(),
+                  certificateUrl: '',
+                  certificateIssuedBy: 'Pending',
+                  certificateDate: DateTime.now(),
+                  brixSweetness: double.tryParse(brixCtrl.text) ?? 0,
+                  status: 'active',
+                ));
                 Navigator.pop(ctx);
               },
               style: ElevatedButton.styleFrom(
@@ -161,26 +162,29 @@ class _BatchesScreenState extends State<BatchesScreen> {
             ),
             const SizedBox(height: 28),
             Expanded(
-              child: ListView.separated(
-                itemCount: MockData.batches.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (_, i) {
-                  final orderCount = MockData.orders
-                      .where((o) => o.batchId == MockData.batches[i].id)
-                      .length;
-                  return _BatchCard(
-                    batch: MockData.batches[i],
-                    orderCount: orderCount,
-                    onEditPrice: () => _showEditDialog(i, 'price'),
-                    onUpdateStock: () => _showEditDialog(i, 'stock'),
-                    onToggleStatus: () => setState(() {
-                      MockData.batches[i] = MockData.batches[i].copyWith(
-                        status: MockData.batches[i].status == 'active' ? 'paused' : 'active',
-                      );
-                    }),
-                  );
-                },
-              ),
+              child: Builder(builder: (context) {
+                final appState = context.watch<AppState>();
+                final batches = appState.batches;
+                final orders = appState.orders;
+                return ListView.separated(
+                  itemCount: batches.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  itemBuilder: (_, i) {
+                    final orderCount =
+                        orders.where((o) => o.batchId == batches[i].id).length;
+                    return _BatchCard(
+                      batch: batches[i],
+                      orderCount: orderCount,
+                      onEditPrice: () => _showEditDialog(i, 'price'),
+                      onUpdateStock: () => _showEditDialog(i, 'stock'),
+                      onToggleStatus: () => context.read<AppState>().updateBatch(
+                            i,
+                            status: batches[i].status == 'active' ? 'paused' : 'active',
+                          ),
+                    );
+                  },
+                );
+              }),
             ),
           ],
         ),

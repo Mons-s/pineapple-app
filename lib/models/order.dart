@@ -62,6 +62,25 @@ class PineappleOrder {
     );
   }
 
+  Map<String, dynamic> toMap() => {
+        'buyerId': buyerId,
+        'buyerName': buyerName,
+        'batchId': batchId,
+        'grade': grade,
+        'quantityKg': quantityKg,
+        'pricePerKgSnapshot': pricePerKgSnapshot,
+        'deliveryFeeSnapshot': deliveryFeeSnapshot,
+        'totalAmount': totalAmount,
+        'addressLine': addressLine,
+        'lat': lat,
+        'lng': lng,
+        'distanceKm': distanceKm,
+        'deliverySlot': deliverySlot,
+        'status': status,
+        'paymentStatus': paymentStatus,
+        'createdAtMs': createdAt.millisecondsSinceEpoch,
+      };
+
   factory PineappleOrder.fromMap(String id, Map<String, dynamic> map) {
     return PineappleOrder(
       id: id,

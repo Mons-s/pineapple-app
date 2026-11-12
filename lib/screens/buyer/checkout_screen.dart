@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/order.dart';
+import '../../services/app_state.dart';
 import '../../services/delivery_rules.dart';
 import '../../services/mock_data.dart';
 import '../../theme.dart';
@@ -59,13 +61,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       createdAt: DateTime.now(),
     );
 
-    MockData.orders.add(order);
-    final batchIdx = MockData.batches.indexWhere((b) => b.id == cart.batch.id);
-    if (batchIdx != -1) {
-      MockData.batches[batchIdx] = MockData.batches[batchIdx].copyWith(
-        stockKg: MockData.batches[batchIdx].stockKg - cart.quantityKg,
-      );
-    }
+    context.read<AppState>().placeOrder(order);
     MockData.cart = null;
 
     Navigator.pushAndRemoveUntil(

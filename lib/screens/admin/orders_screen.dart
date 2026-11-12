@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/order.dart';
-import '../../services/mock_data.dart';
+import '../../services/app_state.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -14,38 +15,32 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   static const _filters = ['All', 'Pending', 'Confirmed', 'Out for delivery', 'Delivered'];
 
-  List<PineappleOrder> get _filtered {
-    final orders = MockData.orders;
-    return switch (_filter) {
-      'Pending' => orders.where((o) => o.status == 'placed').toList(),
-      'Confirmed' => orders.where((o) => o.status == 'confirmed').toList(),
-      'Out for delivery' => orders.where((o) => o.status == 'out_for_delivery').toList(),
-      'Delivered' => orders.where((o) => o.status == 'delivered').toList(),
-      _ => orders,
-    };
-  }
+  List<PineappleOrder> _getFiltered(List<PineappleOrder> orders) => switch (_filter) {
+        'Pending' => orders.where((o) => o.status == 'placed').toList(),
+        'Confirmed' => orders.where((o) => o.status == 'confirmed').toList(),
+        'Out for delivery' => orders.where((o) => o.status == 'out_for_delivery').toList(),
+        'Delivered' => orders.where((o) => o.status == 'delivered').toList(),
+        _ => orders,
+      };
 
-  int _count(String filter) => switch (filter) {
-        'All' => MockData.orders.length,
-        'Pending' => MockData.orders.where((o) => o.status == 'placed').length,
-        'Confirmed' => MockData.orders.where((o) => o.status == 'confirmed').length,
-        'Out for delivery' => MockData.orders.where((o) => o.status == 'out_for_delivery').length,
-        'Delivered' => MockData.orders.where((o) => o.status == 'delivered').length,
+  int _getCount(List<PineappleOrder> orders, String filter) => switch (filter) {
+        'All' => orders.length,
+        'Pending' => orders.where((o) => o.status == 'placed').length,
+        'Confirmed' => orders.where((o) => o.status == 'confirmed').length,
+        'Out for delivery' => orders.where((o) => o.status == 'out_for_delivery').length,
+        'Delivered' => orders.where((o) => o.status == 'delivered').length,
         _ => 0,
       };
 
   void _updateStatus(String orderId, String newStatus) {
-    setState(() {
-      final i = MockData.orders.indexWhere((o) => o.id == orderId);
-      if (i != -1) {
-        MockData.orders[i] = MockData.orders[i].copyWith(status: newStatus);
-      }
-    });
+    context.read<AppState>().updateOrderStatus(orderId, newStatus);
   }
 
   @override
   Widget build(BuildContext context) {
-    final pendingCount = _count('Pending');
+    final orders = context.watch<AppState>().orders;
+    final filtered = _getFiltered(orders);
+    final pendingCount = _getCount(orders, 'Pending');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F3EE),
@@ -105,9 +100,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     padding: EdgeInsets.only(right: isFirst ? 0 : 0, left: isFirst ? 0 : 8),
                     child: _FilterTab(
                       label: f,
-                      count: _count(f),
+                      count: _getCount(orders, f),
                       selected: _filter == f,
-                      urgent: f == 'Pending' && _count('Pending') > 0,
+                      urgent: f == 'Pending' && _getCount(orders, 'Pending') > 0,
                       onTap: () => setState(() => _filter = f),
                     ),
                   );
@@ -152,16 +147,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       ),
                     ),
                     Expanded(
-                      child: _filtered.isEmpty
+                      child: filtered.isEmpty
                           ? Center(
                               child: Text('No orders in this category',
                                   style: TextStyle(color: Colors.grey.shade500, fontSize: 14)))
                           : ListView.builder(
-                              itemCount: _filtered.length,
+                              itemCount: filtered.length,
                               itemBuilder: (_, i) => _OrderRow(
-                                order: _filtered[i],
+                                order: filtered[i],
                                 onUpdateStatus: (newStatus) =>
-                                    _updateStatus(_filtered[i].id, newStatus),
+                                    _updateStatus(filtered[i].id, newStatus),
                               ),
                             ),
                     ),

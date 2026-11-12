@@ -1,11 +1,30 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'services/app_state.dart';
 import 'theme.dart';
 import 'screens/admin/admin_shell.dart';
 import 'screens/buyer/home_screen.dart';
 
+// Steps to enable Firestore:
+// 1. Run: flutterfire configure
+// 2. Run: flutter pub get
+// 3. Uncomment the Firebase imports and init below
+// 4. Set kUseFirestore = true in lib/services/app_state.dart
+
+// import 'package:firebase_core/firebase_core.dart';
+// import 'firebase_options.dart';
+
 void main() {
-  runApp(const PineappleApp());
+  // Uncomment after flutterfire configure:
+  // WidgetsFlutterBinding.ensureInitialized();
+  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => AppState()..init(),
+      child: const PineappleApp(),
+    ),
+  );
 }
 
 class PineappleApp extends StatelessWidget {

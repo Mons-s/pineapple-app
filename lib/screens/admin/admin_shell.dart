@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../services/mock_data.dart';
+import 'package:provider/provider.dart';
+import '../../services/app_state.dart';
 import 'dashboard_screen.dart';
 import 'orders_screen.dart';
 import 'batches_screen.dart';
@@ -24,6 +25,12 @@ class _AdminShellState extends State<AdminShell> {
 
   @override
   Widget build(BuildContext context) {
+    final pendingCount = context
+        .watch<AppState>()
+        .orders
+        .where((o) => o.status == 'placed')
+        .length;
+
     final screens = [
       DashboardScreen(),
       OrdersScreen(),
@@ -85,11 +92,7 @@ class _AdminShellState extends State<AdminShell> {
                     icon: item.icon,
                     label: item.label,
                     selected: selected,
-                    badge: i == 1
-                        ? (MockData.orders.where((o) => o.status == 'placed').length > 0
-                            ? MockData.orders.where((o) => o.status == 'placed').length
-                            : null)
-                        : null,
+                    badge: i == 1 ? (pendingCount > 0 ? pendingCount : null) : null,
                     onTap: () => setState(() => _selectedIndex = i),
                   );
                 }),

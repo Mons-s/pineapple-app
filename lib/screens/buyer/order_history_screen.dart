@@ -1,28 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/order.dart';
-import '../../services/mock_data.dart';
+import '../../services/app_state.dart';
 import '../../theme.dart';
 
-class OrderHistoryScreen extends StatefulWidget {
+class OrderHistoryScreen extends StatelessWidget {
   const OrderHistoryScreen({super.key});
 
   @override
-  State<OrderHistoryScreen> createState() => _OrderHistoryScreenState();
-}
-
-class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
-  void _cancelOrder(String orderId) {
-    setState(() {
-      final i = MockData.orders.indexWhere((o) => o.id == orderId);
-      if (i != -1) {
-        MockData.orders[i] = MockData.orders[i].copyWith(status: 'cancelled');
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final orders = MockData.orders.reversed.toList();
+    final orders = context.watch<AppState>().orders.reversed.toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -40,7 +27,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               itemBuilder: (_, i) => _OrderCard(
                 order: orders[i],
                 onCancel: orders[i].status == 'placed'
-                    ? () => _cancelOrder(orders[i].id)
+                    ? () => context
+                        .read<AppState>()
+                        .updateOrderStatus(orders[i].id, 'cancelled')
                     : null,
               ),
             ),
@@ -68,7 +57,6 @@ class _OrderCardState extends State<_OrderCard> {
   @override
   Widget build(BuildContext context) {
     final o = widget.order;
-    final cfg = _statusConfig(o.status);
 
     return Container(
       decoration: BoxDecoration(
@@ -232,14 +220,6 @@ class _OrderCardState extends State<_OrderCard> {
       ),
     );
   }
-
-  Map<String, dynamic> _statusConfig(String status) => switch (status) {
-        'placed' => {'label': 'Pending', 'color': const Color(0xFFE65100)},
-        'confirmed' => {'label': 'Confirmed', 'color': const Color(0xFF1565C0)},
-        'out_for_delivery' => {'label': 'Out for delivery', 'color': AppTheme.primary},
-        'delivered' => {'label': 'Delivered', 'color': AppTheme.success},
-        _ => {'label': 'Cancelled', 'color': const Color(0xFFB23A2E)},
-      };
 }
 
 class _StatusTracker extends StatelessWidget {

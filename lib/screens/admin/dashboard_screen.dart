@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/order.dart';
 import '../../models/batch.dart';
-import '../../services/mock_data.dart';
+import '../../services/app_state.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final orders = MockData.orders;
-    final batches = MockData.batches;
+    final appState = context.watch<AppState>();
+    final orders = appState.orders;
+    final batches = appState.batches;
 
     final pendingCount = orders.where((o) => o.status == 'placed').length;
     final inTransitCount = orders.where((o) => o.status == 'out_for_delivery').length;
