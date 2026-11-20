@@ -5,7 +5,8 @@ import '../../models/batch.dart';
 import '../../services/app_state.dart';
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+  final VoidCallback? onViewAllOrders;
+  const DashboardScreen({super.key, this.onViewAllOrders});
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +114,7 @@ class DashboardScreen extends StatelessWidget {
               children: [
                 Expanded(
                   flex: 3,
-                  child: _RecentOrdersCard(orders: orders.take(5).toList()),
+                  child: _RecentOrdersCard(orders: orders.take(5).toList(), onViewAll: onViewAllOrders),
                 ),
                 const SizedBox(width: 20),
                 Expanded(
@@ -207,7 +208,8 @@ class _MetricTile extends StatelessWidget {
 
 class _RecentOrdersCard extends StatelessWidget {
   final List<PineappleOrder> orders;
-  const _RecentOrdersCard({required this.orders});
+  final VoidCallback? onViewAll;
+  const _RecentOrdersCard({required this.orders, this.onViewAll});
 
   @override
   Widget build(BuildContext context) {
@@ -237,7 +239,7 @@ class _RecentOrdersCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF16281F))),
                 TextButton(
-                    onPressed: () {},
+                    onPressed: onViewAll,
                     child: const Text('View all',
                         style: TextStyle(color: Color(0xFF2F6B4F), fontSize: 12))),
               ],

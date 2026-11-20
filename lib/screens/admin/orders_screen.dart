@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/order.dart';
 import '../../services/app_state.dart';
 
@@ -36,6 +39,66 @@ class _OrdersScreenState extends State<OrdersScreen> {
     context.read<AppState>().updateOrderStatus(orderId, newStatus);
   }
 
+  Future<void> _exportPackingList(List<PineappleOrder> allOrders) async {
+    final active = allOrders
+        .where((o) => o.status == 'placed' || o.status == 'confirmed' || o.status == 'out_for_delivery')
+        .toList();
+
+    if (active.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No active orders to export.')),
+        );
+      }
+      return;
+    }
+
+    // Group by delivery slot
+    final Map<String, List<PineappleOrder>> bySlot = {};
+    for (final o in active) {
+      (bySlot[o.deliverySlot] ??= []).add(o);
+    }
+
+    final now = DateTime.now();
+    final dateStr = DateFormat('d MMM yyyy').format(now);
+    final fileDate = DateFormat('yyyyMMdd').format(now);
+    final buf = StringBuffer();
+
+    buf.writeln('FreshPine — Packing List');
+    buf.writeln(dateStr);
+    buf.writeln('═' * 52);
+    buf.writeln();
+
+    int totalOrders = 0;
+    double totalKg = 0;
+
+    for (final slot in bySlot.keys.toList()..sort()) {
+      final orders = bySlot[slot]!;
+      final slotKg = orders.fold<double>(0, (s, o) => s + o.quantityKg);
+      totalOrders += orders.length;
+      totalKg += slotKg;
+
+      buf.writeln('SLOT: $slot  (${orders.length} order${orders.length > 1 ? 's' : ''}, ${slotKg.toStringAsFixed(1)} kg)');
+      buf.writeln('─' * 52);
+
+      for (final o in orders) {
+        final id = o.id.split('_').last;
+        final addr = o.addressLine.isNotEmpty ? o.addressLine : '—';
+        buf.writeln('  #$id  ${o.buyerName.padRight(20)}  ${o.quantityKg.toStringAsFixed(1)} kg Grade ${o.grade}');
+        buf.writeln('         $addr');
+      }
+      buf.writeln();
+    }
+
+    buf.writeln('═' * 52);
+    buf.writeln('TOTAL: $totalOrders order${totalOrders > 1 ? 's' : ''}, ${totalKg.toStringAsFixed(1)} kg');
+
+    final docs = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'] ?? '.';
+    final path = '$docs\\Documents\\freshpine_packing_$fileDate.txt';
+    await File(path).writeAsString(buf.toString());
+    await launchUrl(Uri.file(path));
+  }
+
   @override
   Widget build(BuildContext context) {
     final orders = context.watch<AppState>().orders;
@@ -65,27 +128,47 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
                   ],
                 ),
-                if (pendingCount > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF3E0),
-                      border: Border.all(color: const Color(0xFFFFB74D)),
-                      borderRadius: BorderRadius.circular(10),
+                Row(
+                  children: [
+                    if (pendingCount > 0) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF3E0),
+                          border: Border.all(color: const Color(0xFFFFB74D)),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.notifications_active_rounded,
+                                color: Color(0xFFE65100), size: 16),
+                            const SizedBox(width: 8),
+                            Text('$pendingCount order${pendingCount > 1 ? 's' : ''} waiting for confirmation',
+                                style: const TextStyle(
+                                    color: Color(0xFFE65100),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    OutlinedButton.icon(
+                      onPressed: () => _exportPackingList(orders),
+                      icon: const Icon(Icons.print_rounded, size: 15),
+                      label: const Text('Packing list'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF2F6B4F),
+                        side: const BorderSide(color: Color(0xFFB5CCBA)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.notifications_active_rounded,
-                            color: Color(0xFFE65100), size: 16),
-                        const SizedBox(width: 8),
-                        Text('$pendingCount order${pendingCount > 1 ? 's' : ''} waiting for confirmation',
-                            style: const TextStyle(
-                                color: Color(0xFFE65100),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ),
+                  ],
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -139,7 +222,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           _TH('Order', flex: 1),
                           _TH('Buyer', flex: 2),
                           _TH('Qty · Grade', flex: 1),
-                          _TH('Dist · Slot', flex: 2),
+                          _TH('Location · Slot', flex: 3),
                           _TH('Amount', flex: 1),
                           _TH('Status', flex: 2),
                           _TH('Action', flex: 3),
@@ -237,14 +320,21 @@ class _OrderRowState extends State<_OrderRow> {
                   style: const TextStyle(fontSize: 12, color: Color(0xFF16281F))),
             ),
             Expanded(
-              flex: 2,
+              flex: 3,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${o.distanceKm.toStringAsFixed(1)} km',
-                      style: const TextStyle(fontSize: 13, color: Color(0xFF16281F))),
-                  Text(o.deliverySlot,
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF8A9690))),
+                  Text(
+                    o.addressLine.isNotEmpty ? o.addressLine : '—',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF16281F)),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${o.distanceKm.toStringAsFixed(1)} km · ${o.deliverySlot}',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF8A9690)),
+                  ),
                 ],
               ),
             ),

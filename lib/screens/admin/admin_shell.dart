@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/app_state.dart';
@@ -15,6 +16,42 @@ class AdminShell extends StatefulWidget {
 
 class _AdminShellState extends State<AdminShell> {
   int _selectedIndex = 0;
+  int _lastPendingCount = -1;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appState = context.read<AppState>();
+      _lastPendingCount = _pendingCount(appState);
+      appState.addListener(_onAppStateChanged);
+    });
+  }
+
+  @override
+  void dispose() {
+    context.read<AppState>().removeListener(_onAppStateChanged);
+    super.dispose();
+  }
+
+  int _pendingCount(AppState s) =>
+      s.orders.where((o) => o.status == 'placed').length;
+
+  void _onAppStateChanged() {
+    final appState = context.read<AppState>();
+    final count = _pendingCount(appState);
+    if (_lastPendingCount >= 0 && count > _lastPendingCount) {
+      _playNewOrderAlert();
+    }
+    _lastPendingCount = count;
+  }
+
+  void _playNewOrderAlert() {
+    Process.run('powershell', [
+      '-c',
+      '[System.Media.SystemSounds]::Exclamation.Play()',
+    ]);
+  }
 
   final _navItems = const [
     _NavItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
@@ -32,7 +69,7 @@ class _AdminShellState extends State<AdminShell> {
         .length;
 
     final screens = [
-      DashboardScreen(),
+      DashboardScreen(onViewAllOrders: () => setState(() => _selectedIndex = 1)),
       OrdersScreen(),
       BatchesScreen(),
       SettingsScreen(),
