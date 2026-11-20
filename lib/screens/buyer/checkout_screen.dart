@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/order.dart';
 import '../../services/app_state.dart';
+import '../../services/buyer_profile.dart';
 import '../../services/delivery_rules.dart';
 import '../../services/mock_data.dart';
 import '../../theme.dart';
@@ -17,6 +18,8 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   late String _selectedSlot;
+  String _buyerName = '';
+  String _buyerPhone = '';
 
   List<String> get _slots => MockData.deliverySlots;
 
@@ -24,6 +27,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void initState() {
     super.initState();
     _selectedSlot = MockData.deliverySlots.isNotEmpty ? MockData.deliverySlots.first : '';
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final p = await BuyerProfile.load();
+    if (p != null && mounted) {
+      setState(() {
+        _buyerName = p.name;
+        _buyerPhone = p.phone;
+      });
+    }
   }
 
   double get deliveryFee => DeliveryRules.deliveryFee(widget.distanceKm);
@@ -43,8 +57,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final orderId = 'order_${1050 + MockData.orders.length + 1}';
     final order = PineappleOrder(
       id: orderId,
-      buyerId: 'guest',
-      buyerName: 'Guest',
+      buyerId: _buyerPhone.isNotEmpty ? _buyerPhone : 'guest',
+      buyerName: _buyerName.isNotEmpty ? _buyerName : 'Guest',
+      buyerPhone: _buyerPhone,
       batchId: cart.batch.id,
       grade: cart.batch.grade,
       quantityKg: cart.quantityKg,

@@ -5,6 +5,7 @@ class PineappleOrder {
   final String id;
   final String buyerId;
   final String buyerName;
+  final String buyerPhone;
   final String batchId;
   final String grade;
   final double quantityKg;
@@ -24,6 +25,7 @@ class PineappleOrder {
     required this.id,
     required this.buyerId,
     required this.buyerName,
+    required this.buyerPhone,
     required this.batchId,
     required this.grade,
     required this.quantityKg,
@@ -45,6 +47,7 @@ class PineappleOrder {
       id: id,
       buyerId: buyerId,
       buyerName: buyerName,
+      buyerPhone: buyerPhone,
       batchId: batchId,
       grade: grade,
       quantityKg: quantityKg,
@@ -65,6 +68,7 @@ class PineappleOrder {
   Map<String, dynamic> toMap() => {
         'buyerId': buyerId,
         'buyerName': buyerName,
+        'buyerPhone': buyerPhone,
         'batchId': batchId,
         'grade': grade,
         'quantityKg': quantityKg,
@@ -86,6 +90,7 @@ class PineappleOrder {
       id: id,
       buyerId: map['buyerId'] ?? '',
       buyerName: map['buyerName'] ?? '',
+      buyerPhone: map['buyerPhone'] ?? '',
       batchId: map['batchId'] ?? '',
       grade: map['grade'] ?? 'A',
       quantityKg: (map['quantityKg'] ?? 0).toDouble(),

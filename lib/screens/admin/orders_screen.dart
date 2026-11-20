@@ -311,8 +311,18 @@ class _OrderRowState extends State<_OrderRow> {
             ),
             Expanded(
               flex: 2,
-              child: Text(o.buyerName,
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF16281F))),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(o.buyerName,
+                      style: const TextStyle(
+                          fontSize: 13, color: Color(0xFF16281F))),
+                  if (o.buyerPhone.isNotEmpty)
+                    Text(o.buyerPhone,
+                        style: const TextStyle(
+                            fontSize: 11, color: Color(0xFF8A9690))),
+                ],
+              ),
             ),
             Expanded(
               flex: 1,

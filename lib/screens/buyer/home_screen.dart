@@ -4,6 +4,7 @@ import '../../models/batch.dart';
 import '../../services/app_state.dart';
 import '../../theme.dart';
 import 'batch_detail_screen.dart';
+import 'buyer_profile_screen.dart';
 import 'order_history_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -21,6 +22,15 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Fresh pineapples'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline_rounded),
+            tooltip: 'My profile',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const BuyerProfileScreen(isEditing: true)),
+            ),
+          ),
           Stack(
             alignment: Alignment.center,
             children: [
