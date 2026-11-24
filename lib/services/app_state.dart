@@ -10,6 +10,8 @@ const kUseFirestore = true;
 
 class AppState extends ChangeNotifier {
   final List<StreamSubscription> _subs = [];
+  bool _rulesLoaded = false;
+  bool get rulesLoaded => _rulesLoaded;
 
   List<Batch> get batches => MockData.batches;
   List<PineappleOrder> get orders => MockData.orders;
@@ -47,6 +49,19 @@ class AppState extends ChangeNotifier {
           MockData.deliverySlots = List<String>.from(raw);
           notifyListeners();
         }
+      }
+    }));
+
+    _subs.add(db.doc('config/deliveryRules').snapshots().listen((snap) {
+      if (snap.exists) {
+        final d = snap.data()!;
+        if (d['radiusKm'] is num) DeliveryRules.radiusKm = (d['radiusKm'] as num).toDouble();
+        if (d['ratePerKm'] is num) DeliveryRules.ratePerKm = (d['ratePerKm'] as num).toDouble();
+        if (d['minOrderKg'] is num) DeliveryRules.minOrderKg = (d['minOrderKg'] as num).toDouble();
+        if (d['vendorLat'] is num) DeliveryRules.vendorLat = (d['vendorLat'] as num).toDouble();
+        if (d['vendorLng'] is num) DeliveryRules.vendorLng = (d['vendorLng'] as num).toDouble();
+        _rulesLoaded = true;
+        notifyListeners();
       }
     }));
 

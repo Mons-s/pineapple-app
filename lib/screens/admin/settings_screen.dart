@@ -18,6 +18,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _latCtrl;
   late final TextEditingController _lngCtrl;
   bool _saved = false;
+  bool _synced = false;
 
   @override
   void initState() {
@@ -89,6 +90,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appState = context.watch<AppState>();
+    if (!_synced && appState.rulesLoaded) {
+      _synced = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _radiusCtrl.text = DeliveryRules.radiusKm.toStringAsFixed(0);
+        _rateCtrl.text = DeliveryRules.ratePerKm.toStringAsFixed(0);
+        _minOrderCtrl.text = DeliveryRules.minOrderKg.toStringAsFixed(0);
+        _latCtrl.text = DeliveryRules.vendorLat.toString();
+        _lngCtrl.text = DeliveryRules.vendorLng.toString();
+      });
+    }
     return Scaffold(
       backgroundColor: const Color(0xFFF5F3EE),
       body: SingleChildScrollView(
@@ -178,7 +191,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: 'Time windows buyers can choose when placing an order.',
               child: Column(
                 children: [
-                  ...context.watch<AppState>().deliverySlots.asMap().entries.map((e) => Padding(
+                  ...appState.deliverySlots.asMap().entries.map((e) => Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: Row(
                           children: [
@@ -200,7 +213,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             const SizedBox(width: 12),
                             IconButton(
-                              onPressed: context.watch<AppState>().deliverySlots.length > 1
+                              onPressed: appState.deliverySlots.length > 1
                                   ? () => _removeSlot(e.key)
                                   : null,
                               icon: const Icon(Icons.remove_circle_outline,

@@ -21,8 +21,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String _buyerName = '';
   String _buyerPhone = '';
 
-  List<String> get _slots => MockData.deliverySlots;
-
   @override
   void initState() {
     super.initState();
@@ -88,6 +86,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final slots = context.watch<AppState>().deliverySlots;
+    if (slots.isNotEmpty && !slots.contains(_selectedSlot)) {
+      WidgetsBinding.instance.addPostFrameCallback(
+          (_) => setState(() => _selectedSlot = slots.first));
+    }
     final cart = MockData.cart;
 
     return Scaffold(
@@ -120,14 +123,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             _sectionTitle('Delivery slot'),
             _card(
               child: Row(
-                children: _slots.map((slot) {
+                children: slots.map((slot) {
                   final selected = _selectedSlot == slot;
                   return Expanded(
                     child: GestureDetector(
                       onTap: () => setState(() => _selectedSlot = slot),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
-                        margin: EdgeInsets.only(right: slot == _slots.first ? 8 : 0),
+                        margin: EdgeInsets.only(right: slot == slots.first ? 8 : 0),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
                           color: selected ? AppTheme.primary : Colors.transparent,
