@@ -10,6 +10,7 @@ import 'screens/buyer/buyer_profile_screen.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'services/fcm_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +20,13 @@ void main() async {
       defaultTargetPlatform == TargetPlatform.macOS ||
       defaultTargetPlatform == TargetPlatform.linux;
 
-  final hasProfile = isDesktop ? true : (await BuyerProfile.load()) != null;
+  if (!isDesktop) FcmService.registerBackgroundHandler();
+
+  ({String name, String phone})? profile;
+  if (!isDesktop) profile = await BuyerProfile.load();
+  if (profile != null) FcmService.init(profile.phone);
+
+  final hasProfile = isDesktop ? true : profile != null;
 
   runApp(
     ChangeNotifierProvider(

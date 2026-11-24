@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/buyer_profile.dart';
+import '../../services/fcm_service.dart';
 import '../../theme.dart';
 import 'home_screen.dart';
 
@@ -36,6 +37,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     await BuyerProfile.save(_nameCtrl.text, _phoneCtrl.text);
+    FcmService.init(_phoneCtrl.text.trim()); // fire-and-forget: saves FCM token
     if (!mounted) return;
     setState(() => _saving = false);
 
